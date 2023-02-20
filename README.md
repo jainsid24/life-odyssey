@@ -53,7 +53,7 @@ The Pygame window will open and the game will start. The program can be stopped 
  1. Press key 'g' to add a random glider
  2. Press key 'spacebar' to reset pattern.
  3. Press key 'Return' to pause the simulation
- 4. Draw more cells with Mouse Click
+ 4. Draw more cell patterns with Mouse Click and Hold
 
 ## Code Documentation
 

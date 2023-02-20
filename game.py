@@ -2,8 +2,8 @@ import pygame
 import random
 
 # Constants
-WIDTH = 512
-HEIGHT = 400
+WIDTH = 1080
+HEIGHT = 720
 CELL_SIZE = 5
 ROWS = HEIGHT // CELL_SIZE
 COLS = WIDTH // CELL_SIZE
@@ -198,6 +198,7 @@ def main():
     zoom_factor = 0.0
     drawing = False
     paused = False
+    paused_before_draw = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -206,13 +207,15 @@ def main():
                 if event.key == pygame.K_UP:
                     zoom_factor += 0.1
                 elif event.key == pygame.K_DOWN:
-                    zoom_factor -= 0.1
+                    if zoom_factor > 0:
+                        zoom_factor -= 0.1
                 elif event.key == pygame.K_0:
                     zoom_factor = 1.0
                 if event.key == pygame.K_SPACE:
                     grid = create_grid()
                 if event.key == pygame.K_RETURN:
-                    paused = not paused
+                    if not paused_before_draw:
+                        paused = not paused
                 elif event.key == pygame.K_g:
                     row = random.randint(0, ROWS - 3)
                     col = random.randint(0, COLS - 3)
@@ -220,13 +223,15 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     # Start drawing
-                    drawing = True
+                    paused_before_draw = paused
+                    paused = True
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     # Stop drawing
-                    drawing = False
+                    paused = paused_before_draw
+                    paused_before_draw = False
             elif event.type == pygame.MOUSEMOTION:
-                if drawing:
+                if paused and pygame.mouse.get_pressed():
                     # Draw the pattern
                     x, y = event.pos
                     row = y // CELL_SIZE
