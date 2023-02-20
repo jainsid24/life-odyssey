@@ -14,6 +14,7 @@ This is an implementation of Conway's Game of Life in Python using the Pygame li
 1. [Introduction](#introduction)
 2. [Installation](#installation)
 3. [Usage](#usage)
+    - [Key Bindings](#key-bindings)
 4. [Code Documentation](#code-documentation)
 6. [References](#references)
 8. [License](#license)
@@ -47,6 +48,10 @@ python game.py
 ```
 
 The Pygame window will open and the game will start. The program can be stopped by closing the window or pressing Ctrl-C in the terminal.
+
+### Key Bindings
+ 1. Press key 'g' to add a random glider
+ 2. Press key 'spacebar' to reset pattern.
 
 ## Code Documentation
 
