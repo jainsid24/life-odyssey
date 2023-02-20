@@ -8,6 +8,7 @@ CELL_SIZE = 5
 ROWS = HEIGHT // CELL_SIZE
 COLS = WIDTH // CELL_SIZE
 FPS = 120
+FLIP = 1
 SCALE_FACTOR = 0.25  # Used to scale up and down the cell size
 BACKGROUND_TOP = (24, 18, 37)  # Dark color for top of the screen
 BACKGROUND_BOTTOM = (33, 71, 97)  # Light color for bottom of the screen
@@ -61,6 +62,7 @@ def update_grid(grid):
                 new_grid[row][col] = 1
             else:
                 new_grid[row][col] = grid[row][col]
+    randomly_flip_cells(new_grid)
     return new_grid
 
 
@@ -176,15 +178,26 @@ def create_glider(grid, row, col):
             grid[row + i][col + j] = glider[i][j]
     return grid
 
+def randomly_flip_cells(grid):
+    """Randomly flip the states of a few cells on the grid."""
+    if FLIP <=1:
+        return
+    num_flips = random.randint(1, FLIP)
+    for i in range(num_flips):
+        row = random.randint(0, ROWS - 1)
+        col = random.randint(0, COLS - 1)
+        grid[row][col] = 1 - grid[row][col]
 
 def main():
     """Run the game."""
     grid = create_grid()
     last_grid = [[0 for _ in range(COLS)] for _ in range(ROWS)]
     running = True
-    scale_factor = 0
+    scale_factor = 1
     scale_direction = 1
-    zoom_factor = 1.0
+    zoom_factor = 0.0
+    drawing = False
+    paused = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -198,10 +211,27 @@ def main():
                     zoom_factor = 1.0
                 if event.key == pygame.K_SPACE:
                     grid = create_grid()
+                if event.key == pygame.K_RETURN:
+                    paused = not paused
                 elif event.key == pygame.K_g:
                     row = random.randint(0, ROWS - 3)
                     col = random.randint(0, COLS - 3)
                     grid = create_glider(grid, row, col)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    # Start drawing
+                    drawing = True
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    # Stop drawing
+                    drawing = False
+            elif event.type == pygame.MOUSEMOTION:
+                if drawing:
+                    # Draw the pattern
+                    x, y = event.pos
+                    row = y // CELL_SIZE
+                    col = x // CELL_SIZE
+                    grid[row][col] = 1
         scaled_width = int(WIDTH * zoom_factor)
         scaled_height = int(HEIGHT * zoom_factor)
         scaled_screen = pygame.transform.scale(screen, (scaled_width, scaled_height))
@@ -209,8 +239,9 @@ def main():
             scaled_screen, ((WIDTH - scaled_width) // 2, (HEIGHT - scaled_height) // 2)
         )
         pygame.display.update()
-        last_grid = grid
-        grid = update_grid(grid)
+        if not paused:
+            last_grid = grid
+            grid = update_grid(grid)
         draw_color_scheme(grid, scale_factor, last_grid)
         # Update the scale factor for the pulsating effect
         scale_factor += 0.025 * scale_direction
