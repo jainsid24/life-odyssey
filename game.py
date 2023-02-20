@@ -88,7 +88,7 @@ def draw_grid():
         pygame.draw.line(screen, (50, 50, 50), (0, y), (WIDTH, y))
 
 def draw_color_scheme(grid, scale_factor, last_grid):
-    """Draw the grid on the screen as 3D cubes with a color gradient and a pulsating effect."""
+    """Draw the grid on the screen as spheres with a color gradient and a pulsating effect."""
     # Draw the background color gradient
     for y in range(HEIGHT):
         color = interpolate_colors(BACKGROUND_TOP, BACKGROUND_BOTTOM, y / HEIGHT)
@@ -107,24 +107,29 @@ def draw_color_scheme(grid, scale_factor, last_grid):
                     # Draw the circle
                     pygame.draw.circle(screen, color, (x, y), size // 2)
 
+                    # Draw the circle highlight
+                    highlight_size = size // 4
+                    highlight_color = lighter(color, 0.2)
+                    highlight_pos = (x - highlight_size, y - highlight_size)
+                    highlight_rect = pygame.Rect(highlight_pos, (highlight_size*2, highlight_size*2))
+                    pygame.draw.ellipse(screen, highlight_color, highlight_rect)
+
                     # Draw the circle shadow
                     shadow_size = size // 4
                     shadow_color = darker(color, 0.2)
-                    pygame.draw.circle(
-                        screen,
-                        shadow_color,
-                        (x + shadow_size, y + shadow_size),
-                        size // 2 - shadow_size,
-                    )
+                    shadow_pos = (x + shadow_size, y + shadow_size)
+                    shadow_rect = pygame.Rect(shadow_pos, (size - shadow_size*4, size - shadow_size*4))
+                    pygame.draw.ellipse(screen, shadow_color, shadow_rect)
 
-                    # Draw the circle highlight
-                    highlight_size = size // 6
-                    highlight_color = lighter(color, 0.2)
+
+                    # Draw the specular highlight
+                    specular_size = size // 10
+                    specular_color = (255, 255, 255)
                     pygame.draw.circle(
                         screen,
-                        highlight_color,
-                        (x - highlight_size, y - highlight_size),
-                        highlight_size,
+                        specular_color,
+                        (x - specular_size, y  + specular_size),
+                        specular_size,
                     )
                 else:
                     # Draw a circle for dead cells
