@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 
 # Constants
 WIDTH = 1080
@@ -17,6 +18,7 @@ CELL_COLORS = [(60, 173, 100), (52, 152, 219)]  # Colors for alive and dead cell
 BORDER_COLOR = (0,0,0)
 BORDER_WIDTH = 2
 PULSATE = False
+
 
 # Initialize Pygame
 pygame.init()
@@ -69,13 +71,21 @@ def update_grid(grid):
     randomly_flip_cells(new_grid)
     return new_grid
 
+def darker(color, depth=0.2):
+    """Return a darker version of the given color."""
+    r, g, b = color
+    return int(r * (1 - depth)), int(g * (1 - depth)), int(b * (1 - depth))
+
+def lighter(color, depth=0.2):
+    """Return a lighter version of the given color."""
+    r, g, b = color
+    return int(r + (240 - r) * depth//2), int(g + (240 - g) * depth//2), int(b + (240 - b) * depth//2)
 
 def draw_grid():
     for x in range(0, WIDTH, CELL_SIZE):
         pygame.draw.line(screen, (50, 50, 50), (x, 0), (x, HEIGHT))
     for y in range(0, HEIGHT, CELL_SIZE):
         pygame.draw.line(screen, (50, 50, 50), (0, y), (WIDTH, y))
-
 
 def draw_color_scheme(grid, scale_factor, last_grid):
     """Draw the grid on the screen as 3D cubes with a color gradient and a pulsating effect."""
@@ -84,77 +94,37 @@ def draw_color_scheme(grid, scale_factor, last_grid):
         color = interpolate_colors(BACKGROUND_TOP, BACKGROUND_BOTTOM, y / HEIGHT)
         pygame.draw.line(screen, color, (0, y), (WIDTH, y))
 
-    # Draw the cells as 3D cubes with the wave pattern and pulsating effect
+    # Draw the cells as 3D circles with the wave pattern and pulsating effect
     for row in range(ROWS):
         for col in range(COLS):
             if grid[row][col] != last_grid[row][col]:
                 if grid[row][col] == 1:
                     color = get_cell_color(row)
                     size = int(CELL_SIZE + CELL_SIZE * scale_factor)
-                    x = col * CELL_SIZE
-                    y = row * CELL_SIZE
+                    x = col * CELL_SIZE + CELL_SIZE // 2
+                    y = row * CELL_SIZE + CELL_SIZE // 2
 
-                    # Draw the front face
-                    pygame.draw.rect(screen, BORDER_COLOR, (x, y, CELL_SIZE, CELL_SIZE), BORDER_WIDTH)
-                    pygame.draw.rect(screen, color, (x, y, CELL_SIZE, CELL_SIZE))
+                    # Draw the circle
+                    pygame.draw.circle(screen, color, (x, y), size // 2)
 
-                    # Draw the back face
-                    pygame.draw.rect(screen, BORDER_COLOR, (x, y, CELL_SIZE, CELL_SIZE), BORDER_WIDTH)
-                    pygame.draw.rect(
+                    # Draw the circle shadow
+                    shadow_size = size // 4
+                    shadow_color = darker(color, 0.2)
+                    pygame.draw.circle(
                         screen,
-                        interpolate_colors(color, (0, 0, 0), 0.5),
-                        (x, y, CELL_SIZE, CELL_SIZE),
-                        2,
+                        shadow_color,
+                        (x + shadow_size, y + shadow_size),
+                        size // 2 - shadow_size,
                     )
 
-                    # Draw the left face
-                    pygame.draw.polygon(
+                    # Draw the circle highlight
+                    highlight_size = size // 6
+                    highlight_color = lighter(color, 0.2)
+                    pygame.draw.circle(
                         screen,
-                        interpolate_colors(color, (0, 0, 0), 0.1),
-                        [
-                            (x, y),
-                            (x + CELL_SIZE // 2, y - CELL_SIZE // 2),
-                            (x + CELL_SIZE // 2, y + CELL_SIZE // 2),
-                            (x, y + CELL_SIZE),
-                        ],
-                        2,
-                    )
-
-                    # Draw the right face
-                    pygame.draw.polygon(
-                        screen,
-                        interpolate_colors(color, (0, 0, 0), 0.2),
-                        [
-                            (x + CELL_SIZE, y),
-                            (x + CELL_SIZE // 2, y - CELL_SIZE // 2),
-                            (x + CELL_SIZE // 2, y + CELL_SIZE // 2),
-                            (x + CELL_SIZE, y + CELL_SIZE),
-                        ],
-                        2,
-                    )
-
-                    # Draw the top face
-                    pygame.draw.polygon(
-                        screen,
-                        interpolate_colors(color, (255, 255, 255), 0.5),
-                        [
-                            (x, y),
-                            (x + CELL_SIZE, y),
-                            (x + CELL_SIZE // 2, y - CELL_SIZE // 2),
-                        ],
-                        2,
-                    )
-
-                    # Draw the bottom face
-                    pygame.draw.polygon(
-                        screen,
-                        interpolate_colors(color, (0, 0, 0), 0.5),
-                        [
-                            (x, y + CELL_SIZE),
-                            (x + CELL_SIZE, y + CELL_SIZE),
-                            (x + CELL_SIZE // 2, y + CELL_SIZE + CELL_SIZE // 2),
-                        ],
-                        2,
+                        highlight_color,
+                        (x - highlight_size, y - highlight_size),
+                        highlight_size,
                     )
                 else:
                     # Draw a circle for dead cells
@@ -167,14 +137,12 @@ def draw_color_scheme(grid, scale_factor, last_grid):
         draw_grid()
     pygame.display.update()
 
-
 def interpolate_colors(color1, color2, t):
     """Interpolate between two colors."""
     r = int(color1[0] + (color2[0] - color1[0]) * t)
     g = int(color1[1] + (color2[1] - color1[1]) * t)
     b = int(color1[2] + (color2[2] - color1[2]) * t)
     return (r, g, b)
-
 
 def create_glider(grid, row, col):
     """Create a glider pattern at the specified row and column."""
@@ -261,7 +229,6 @@ def main():
         clock.tick(FPS)
 
     pygame.quit()
-
 
 if __name__ == "__main__":
     main()

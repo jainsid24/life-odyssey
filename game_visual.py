@@ -1,26 +1,29 @@
 import pygame
 import random
+import math
 
 # Constants
-WIDTH = 512
-HEIGHT = 400
+WIDTH = 1080
+HEIGHT = 720
 CELL_SIZE = 5
 ROWS = HEIGHT // CELL_SIZE
 COLS = WIDTH // CELL_SIZE
-FPS = 120
-SCALE_FACTOR = 0.25  # Used to scale up and down the cell size
+FPS = 240
+FLIP = 0
+GRID = False
+SCALE_FACTOR = 0.1  # Used to scale up and down the cell size
 BACKGROUND_TOP = (24, 18, 37)  # Dark color for top of the screen
 BACKGROUND_BOTTOM = (33, 71, 97)  # Light color for bottom of the screen
 CELL_COLORS = [(60, 173, 100), (52, 152, 219)]  # Colors for alive and dead cells
+BORDER_COLOR = (0,0,0)
+BORDER_WIDTH = 2
+PULSATE = False
+
 
 # Initialize Pygame
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
-
-# Load background image
-# background_image = pygame.image.load("background.png").convert()
-
 
 def create_grid():
     """Create a new grid with random alive/dead cells."""
@@ -65,8 +68,50 @@ def update_grid(grid):
                 new_grid[row][col] = 1
             else:
                 new_grid[row][col] = grid[row][col]
+    randomly_flip_cells(new_grid)
     return new_grid
 
+def darker(color, depth=0.2):
+    """Return a darker version of the given color."""
+    r, g, b = color
+    return int(r * (1 - depth)), int(g * (1 - depth)), int(b * (1 - depth))
+
+def lighter(color, depth=0.2):
+    """Return a lighter version of the given color."""
+    r, g, b = color
+    return int(r + (240 - r) * depth//2), int(g + (240 - g) * depth//2), int(b + (240 - b) * depth//2)
+
+
+def draw_grid():
+    for x in range(0, WIDTH, CELL_SIZE):
+        pygame.draw.line(screen, (50, 50, 50), (x, 0), (x, HEIGHT))
+    for y in range(0, HEIGHT, CELL_SIZE):
+        pygame.draw.line(screen, (50, 50, 50), (0, y), (WIDTH, y))
+
+def draw_3D_cells(screen, color, x, y, size, depth):
+    # Draw the front face
+    pygame.draw.rect(screen, BORDER_COLOR, (x, y, CELL_SIZE, CELL_SIZE), BORDER_WIDTH)
+    pygame.draw.rect(screen, color, (x, y, size, size))
+
+    # Draw the right face
+    pygame.draw.polygon(screen, darker(color, depth),
+                        [(x + size, y), (x + size + depth, y - depth),
+                         (x + size + depth, y + size - depth), (x + size, y + size)])
+
+    # Draw the bottom face
+    pygame.draw.polygon(screen, darker(color, depth),
+                        [(x, y + size), (x + depth, y + size + depth),
+                         (x + size + depth, y + size + depth), (x + size, y + size)])
+
+    # Draw the top face
+    pygame.draw.polygon(screen, lighter(color,depth),
+                        [(x, y), (x + depth, y + depth), (x + size + depth, y + depth),
+                         (x + size, y)])
+
+    # Draw the left face
+    pygame.draw.polygon(screen, lighter(color,depth),
+                        [(x, y), (x - depth, y - depth), (x - depth, y + size - depth),
+                         (x, y + size)])
 
 def draw_color_scheme(grid, scale_factor, last_grid):
     """Draw the grid on the screen as 3D cubes with a color gradient and a pulsating effect."""
@@ -84,68 +129,39 @@ def draw_color_scheme(grid, scale_factor, last_grid):
                     size = int(CELL_SIZE + CELL_SIZE * scale_factor)
                     x = col * CELL_SIZE
                     y = row * CELL_SIZE
+                    if PULSATE:
+                        depth = int(CELL_SIZE * 0.2 * math.sin(scale_factor * 2 * math.pi))
+                    else:
+                        depth = int(CELL_SIZE * 0.2)
+                    draw_3D_cells(screen, color, x, y, size, depth)
 
-                    # Draw the front face
-                    pygame.draw.rect(screen, color, (x, y, CELL_SIZE, CELL_SIZE))
+                    # Draw the shadow on the right side
+                    shadow_color = (123, 122, 114, 2)
+                    shadow_polygon = [
+                        (x + CELL_SIZE, y),
+                        (x + CELL_SIZE, y + CELL_SIZE),
+                        (x + CELL_SIZE * 1.5, y + CELL_SIZE * 1.5),
+                        (x + CELL_SIZE * 1.5, y + CELL_SIZE * 0.5),
+                    ]
+                    pygame.draw.polygon(screen, shadow_color, shadow_polygon)
 
-                    # Draw the back face
-                    pygame.draw.rect(
-                        screen,
-                        interpolate_colors(color, (0, 0, 0), 0.5),
-                        (x, y, CELL_SIZE, CELL_SIZE),
-                        2,
-                    )
-
-                    # Draw the left face
-                    pygame.draw.polygon(
-                        screen,
-                        interpolate_colors(color, (0, 0, 0), 0.2),
-                        [
-                            (x, y),
-                            (x + CELL_SIZE // 2, y - CELL_SIZE // 2),
-                            (x + CELL_SIZE // 2, y + CELL_SIZE // 2),
-                            (x, y + CELL_SIZE),
-                        ],
-                        2,
-                    )
-
-                    # Draw the right face
-                    pygame.draw.polygon(
-                        screen,
-                        interpolate_colors(color, (0, 0, 0), 0.2),
-                        [
-                            (x + CELL_SIZE, y),
-                            (x + CELL_SIZE // 2, y - CELL_SIZE // 2),
-                            (x + CELL_SIZE // 2, y + CELL_SIZE // 2),
-                            (x + CELL_SIZE, y + CELL_SIZE),
-                        ],
-                        2,
-                    )
-
-                    # Draw the top face
-                    pygame.draw.polygon(
-                        screen,
-                        interpolate_colors(color, (255, 255, 255), 0.5),
-                        [
-                            (x, y),
-                            (x + CELL_SIZE, y),
-                            (x + CELL_SIZE // 2, y - CELL_SIZE // 2),
-                        ],
-                        2,
-                    )
-
-                    # Draw the bottom face
-                    pygame.draw.polygon(
-                        screen,
-                        interpolate_colors(color, (0, 0, 0), 0.5),
-                        [
-                            (x, y + CELL_SIZE),
-                            (x + CELL_SIZE, y + CELL_SIZE),
-                            (x + CELL_SIZE // 2, y + CELL_SIZE + CELL_SIZE // 2),
-                        ],
-                        2,
-                    )
-
+                    # Draw the shadow on the bottom side
+                    shadow_polygon = [
+                        (x, y + CELL_SIZE),
+                        (x + CELL_SIZE, y + CELL_SIZE),
+                        (x + CELL_SIZE * 1.5, y + CELL_SIZE * 1.5),
+                        (x + CELL_SIZE * 0.5, y + CELL_SIZE * 1.5),
+                    ]
+                    pygame.draw.polygon(screen, shadow_color, shadow_polygon)
+                else:
+                    # Draw a circle for dead cells
+                    x = col * CELL_SIZE + CELL_SIZE // 2
+                    y = row * CELL_SIZE + CELL_SIZE // 2
+                    size = int(CELL_SIZE + CELL_SIZE * scale_factor)
+                    color = interpolate_colors(CELL_COLORS[1], (0, 0, 0), 0.5)
+                    pygame.draw.circle(screen, color, (x, y), size // 2)
+    if GRID:
+        draw_grid()
     pygame.display.update()
 
 
@@ -165,27 +181,75 @@ def create_glider(grid, row, col):
             grid[row + i][col + j] = glider[i][j]
     return grid
 
+def randomly_flip_cells(grid):
+    """Randomly flip the states of a few cells on the grid."""
+    if FLIP <=1:
+        return
+    num_flips = random.randint(1, FLIP)
+    for i in range(num_flips):
+        row = random.randint(0, ROWS - 1)
+        col = random.randint(0, COLS - 1)
+        grid[row][col] = 1 - grid[row][col]
 
 def main():
     """Run the game."""
     grid = create_grid()
     last_grid = [[0 for _ in range(COLS)] for _ in range(ROWS)]
     running = True
-    scale_factor = 0
+    scale_factor = 1
     scale_direction = 1
+    zoom_factor = 0.0
+    drawing = False
+    paused = False
+    paused_before_draw = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+                if event.key == pygame.K_UP:
+                    zoom_factor += 0.1
+                elif event.key == pygame.K_DOWN:
+                    if zoom_factor > 0:
+                        zoom_factor -= 0.1
+                elif event.key == pygame.K_0:
+                    zoom_factor = 1.0
+                elif event.key == pygame.K_SPACE:
                     grid = create_grid()
+                elif event.key == pygame.K_RETURN:
+                    if not paused_before_draw:
+                        paused = not paused
                 elif event.key == pygame.K_g:
                     row = random.randint(0, ROWS - 3)
                     col = random.randint(0, COLS - 3)
                     grid = create_glider(grid, row, col)
-        last_grid = grid
-        grid = update_grid(grid)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    # Start drawing
+                    paused_before_draw = paused
+                    paused = True
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    # Stop drawing
+                    paused = paused_before_draw
+                    paused_before_draw = False
+            elif event.type == pygame.MOUSEMOTION:
+                if paused and pygame.mouse.get_pressed():
+                    # Draw the pattern
+                    x, y = event.pos
+                    row = y // CELL_SIZE
+                    col = x // CELL_SIZE
+                    grid[row][col] = 1
+        scaled_width = int(WIDTH * zoom_factor)
+        scaled_height = int(HEIGHT * zoom_factor)
+        scaled_screen = pygame.transform.scale(screen, (scaled_width, scaled_height))
+        screen.blit(
+            scaled_screen, ((WIDTH - scaled_width) // 2, (HEIGHT - scaled_height) // 2)
+        )
+        pygame.display.update()
+        if not paused:
+            last_grid = grid
+            grid = update_grid(grid)
         draw_color_scheme(grid, scale_factor, last_grid)
         # Update the scale factor for the pulsating effect
         scale_factor += 0.025 * scale_direction
