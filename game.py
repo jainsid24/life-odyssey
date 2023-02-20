@@ -18,7 +18,7 @@ CELL_COLORS = [(60, 173, 100), (52, 152, 219)]  # Colors for alive and dead cell
 BORDER_COLOR = (0,0,0)
 BORDER_WIDTH = 2
 PULSATE = False
-
+RANDOM_FLIP = False
 
 # Initialize Pygame
 pygame.init()
@@ -68,7 +68,8 @@ def update_grid(grid):
                 new_grid[row][col] = 1
             else:
                 new_grid[row][col] = grid[row][col]
-    randomly_flip_cells(new_grid)
+    if RANDOM_FLIP:
+        randomly_flip_cells(new_grid)
     return new_grid
 
 def darker(color, depth=0.2):
@@ -86,6 +87,7 @@ def draw_grid():
         pygame.draw.line(screen, (50, 50, 50), (x, 0), (x, HEIGHT))
     for y in range(0, HEIGHT, CELL_SIZE):
         pygame.draw.line(screen, (50, 50, 50), (0, y), (WIDTH, y))
+
 
 def draw_color_scheme(grid, scale_factor, last_grid):
     """Draw the grid on the screen as spheres with a color gradient and a pulsating effect."""
@@ -121,7 +123,6 @@ def draw_color_scheme(grid, scale_factor, last_grid):
                     shadow_rect = pygame.Rect(shadow_pos, (size - shadow_size*4, size - shadow_size*4))
                     pygame.draw.ellipse(screen, shadow_color, shadow_rect)
 
-
                     # Draw the specular highlight
                     specular_size = size // 10
                     specular_color = (255, 255, 255)
@@ -138,6 +139,7 @@ def draw_color_scheme(grid, scale_factor, last_grid):
                     size = int(CELL_SIZE + CELL_SIZE * scale_factor)
                     color = interpolate_colors(CELL_COLORS[1], (0, 0, 0), 0.5)
                     pygame.draw.circle(screen, color, (x, y), size // 2)
+
     if GRID:
         draw_grid()
     pygame.display.update()
