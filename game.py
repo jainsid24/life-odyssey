@@ -7,12 +7,16 @@ HEIGHT = 720
 CELL_SIZE = 5
 ROWS = HEIGHT // CELL_SIZE
 COLS = WIDTH // CELL_SIZE
-FPS = 120
-FLIP = 1
-SCALE_FACTOR = 0.25  # Used to scale up and down the cell size
+FPS = 240
+FLIP = 0
+GRID = False
+SCALE_FACTOR = 0.1  # Used to scale up and down the cell size
 BACKGROUND_TOP = (24, 18, 37)  # Dark color for top of the screen
 BACKGROUND_BOTTOM = (33, 71, 97)  # Light color for bottom of the screen
 CELL_COLORS = [(60, 173, 100), (52, 152, 219)]  # Colors for alive and dead cells
+BORDER_COLOR = (0,0,0)
+BORDER_WIDTH = 2
+PULSATE = False
 
 # Initialize Pygame
 pygame.init()
@@ -91,9 +95,11 @@ def draw_color_scheme(grid, scale_factor, last_grid):
                     y = row * CELL_SIZE
 
                     # Draw the front face
+                    pygame.draw.rect(screen, BORDER_COLOR, (x, y, CELL_SIZE, CELL_SIZE), BORDER_WIDTH)
                     pygame.draw.rect(screen, color, (x, y, CELL_SIZE, CELL_SIZE))
 
                     # Draw the back face
+                    pygame.draw.rect(screen, BORDER_COLOR, (x, y, CELL_SIZE, CELL_SIZE), BORDER_WIDTH)
                     pygame.draw.rect(
                         screen,
                         interpolate_colors(color, (0, 0, 0), 0.5),
@@ -104,7 +110,7 @@ def draw_color_scheme(grid, scale_factor, last_grid):
                     # Draw the left face
                     pygame.draw.polygon(
                         screen,
-                        interpolate_colors(color, (0, 0, 0), 0.2),
+                        interpolate_colors(color, (0, 0, 0), 0.1),
                         [
                             (x, y),
                             (x + CELL_SIZE // 2, y - CELL_SIZE // 2),
@@ -157,8 +163,8 @@ def draw_color_scheme(grid, scale_factor, last_grid):
                     size = int(CELL_SIZE + CELL_SIZE * scale_factor)
                     color = interpolate_colors(CELL_COLORS[1], (0, 0, 0), 0.5)
                     pygame.draw.circle(screen, color, (x, y), size // 2)
-
-    draw_grid()
+    if GRID:
+        draw_grid()
     pygame.display.update()
 
 
@@ -211,9 +217,9 @@ def main():
                         zoom_factor -= 0.1
                 elif event.key == pygame.K_0:
                     zoom_factor = 1.0
-                if event.key == pygame.K_SPACE:
+                elif event.key == pygame.K_SPACE:
                     grid = create_grid()
-                if event.key == pygame.K_RETURN:
+                elif event.key == pygame.K_RETURN:
                     if not paused_before_draw:
                         paused = not paused
                 elif event.key == pygame.K_g:
