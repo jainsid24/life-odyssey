@@ -101,8 +101,8 @@ The game can be customized by modifying the following parameters in the config.p
 
 ## References
 
-[Conway's Game of Life on Wikipedia](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
-[The Game of Life - John Horton Conway](https://www.youtube.com/watch?v=R9Plq-D1gEk)
+- [Conway's Game of Life on Wikipedia](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
+- [The Game of Life - John Horton Conway](https://www.youtube.com/watch?v=R9Plq-D1gEk)
 
 ## License
 
