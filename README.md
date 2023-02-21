@@ -10,7 +10,10 @@
 Life Odyssey is a research project that explores the emergent behaviors of cellular automata. The program allows users to experiment with various rules and initial conditions to see how these affect the growth and evolution of cells on a grid. With the added "zombie mode," players can watch as cells can infect and transform into zombies, adding a new level of complexity and challenge. Life Odyssey offers a visually immersive and engaging experience that is perfect for students, researchers, or anyone interested in the study of complex systems.
 
 ---
-| <img src="game.gif" alt="Gameplay" width="300"/> | <img src="zombie.gif" alt="Zombie Mode" width="300"/> | <img src="draw.gif" alt="Draw Mode" width="300"/> |
+| <img src="game.gif" alt="Gameplay" width="300" style="max-width: 100%;"/> | <img src="zombie.gif" alt="Zombie Mode" width="300" style="max-width: 100%;"/> | <img src="draw.gif" alt="Draw Mode" width="300" style="max-width: 100%;"/> |
+| :---: | :---: | :---: |
+| Gameplay | Zombie Mode | Draw Mode |
+
 | :---: | :---: | :---: |
 | **Emergence** | **Zombie** | **Draw**  |
 
