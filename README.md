@@ -12,9 +12,6 @@ Life Odyssey is a research project that explores the emergent behaviors of cellu
 ---
 | <img src="game.gif" alt="Gameplay" width="300" style="max-width: 100%;"/> | <img src="zombie.gif" alt="Zombie Mode" width="300" style="max-width: 100%;"/> | <img src="draw.gif" alt="Draw Mode" width="300" style="max-width: 100%;"/> |
 | :---: | :---: | :---: |
-| Gameplay | Zombie Mode | Draw Mode |
-
-| :---: | :---: | :---: |
 | **Emergence** | **Zombie** | **Draw**  |
 
 
