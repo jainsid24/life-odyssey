@@ -7,7 +7,7 @@
 ![Pygame Version](https://img.shields.io/badge/Pygame-2.0.2-red?style=flat-square)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black?style=flat-square)
 
-Life Odyssey is a research project that explores the emergent behaviors of cellular automata. The program allows users to experiment with various rules and initial conditions to see how these affect the growth and evolution of cells on a grid. With the added "zombie mode," players can watch as cells can infect and transform into zombies, adding a new level of complexity and challenge. Life Odyssey offers a visually immersive and engaging experience that is perfect for students, researchers, or anyone interested in the study of complex systems.
+Life Odyssey explores the emergent behaviors of cellular automata. The program allows users to experiment with various rules and initial conditions to see how these affect the growth and evolution of cells on a grid. With the added "zombie mode," players can watch as cells can infect and transform into zombies, adding a new level of complexity and challenge. Life Odyssey offers a visually immersive and engaging experience that is perfect for students, researchers, or anyone interested in the study of complex systems.
 
 ---
 <p align="center">
