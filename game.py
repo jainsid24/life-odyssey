@@ -1,33 +1,80 @@
 import pygame
 import random
 import math
-
-# Constants
-WIDTH = 1080
-HEIGHT = 720
-CELL_SIZE = 5
-ROWS = HEIGHT // CELL_SIZE
-COLS = WIDTH // CELL_SIZE
-FPS = 240
-FLIP = 0
-GRID = False
-SCALE_FACTOR = 0.1  # Used to scale up and down the cell size
-BACKGROUND_TOP = (24, 18, 37)  # Dark color for top of the screen
-BACKGROUND_BOTTOM = (33, 71, 97)  # Light color for bottom of the screen
-CELL_COLORS = [(60, 173, 100), (52, 152, 219)]  # Colors for alive and dead cells
-BORDER_COLOR = (0,0,0)
-BORDER_WIDTH = 2
-PULSATE = False
-RANDOM_FLIP = False
+import numpy as np
+from config import *
 
 # Initialize Pygame
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
+import math
+
+
 def create_grid():
-    """Create a new grid with random alive/dead cells."""
-    return [[random.choice([0, 1]) for _ in range(COLS)] for _ in range(ROWS)]
+    """Create a new grid with random alive/dead cells, and optionally some zombies."""
+    # Initialize an empty grid
+    grid = [[0 for _ in range(COLS)] for _ in range(ROWS)]
+
+    if START_PATTERN == "square":
+        # Set all cells inside a square to 1
+        side_length = min(ROWS, COLS) // 2
+        left = COLS // 2 - side_length // 2
+        top = ROWS // 2 - side_length // 2
+        for row in range(top, top + side_length):
+            for col in range(left, left + side_length):
+                grid[row][col] = 1
+    elif START_PATTERN == "star":
+        # Set all cells inside a star to 1
+        radius = min(ROWS, COLS) // 4
+        center_row, center_col = ROWS // 2, COLS // 2
+        for row in range(ROWS):
+            for col in range(COLS):
+                if (
+                    abs(row - center_row) <= radius / 2
+                    or abs(col - center_col) <= radius / 2
+                    or abs(row - center_row) + abs(col - center_col) <= radius
+                ):
+                    grid[row][col] = 1
+    elif START_PATTERN == "hex":
+        radius = min(ROWS, COLS) // 2
+        center_row, center_col = ROWS // 2, COLS // 2
+        for row in range(ROWS):
+            for col in range(COLS):
+                if (
+                    abs(row - center_row) + abs(col - center_col / 2) <= radius / 2
+                    or abs(col - center_col) <= radius / 2
+                ):
+                    grid[row][col] = 1
+    elif START_PATTERN == "star_thick":
+        # Set all cells inside a star with thicker arms to 1
+        radius = min(ROWS, COLS) // 4
+        center_row, center_col = ROWS // 2, COLS // 2
+        for row in range(ROWS):
+            for col in range(COLS):
+                if (
+                    abs(row - center_row) <= radius
+                    or abs(col - center_col) <= radius
+                    or abs(row - center_row) + abs(col - center_col) <= radius + 1
+                ):
+                    grid[row][col] = 1
+    else:
+        # Generate a grid of random values between 0 and 1
+        random_grid = np.random.rand(ROWS, COLS)
+        # Threshold the random values with the spawn rate to get a grid of 0s and 1s
+        grid = np.where(random_grid < SPAWN_RATE, 1, 0)
+
+    if ZOMBIE:
+        # Count the number of existing zombies
+        num_zombies = np.sum(grid == 2)
+        # Spawn new zombies until the desired total is reached
+        while num_zombies < MAX_ZOMBIES:
+            row, col = np.random.randint(0, ROWS), np.random.randint(0, COLS)
+            if grid[row][col] != 2:
+                grid[row][col] = 2
+                num_zombies += 1
+    return grid
 
 
 def count_neighbors(grid, row, col):
@@ -43,11 +90,14 @@ def count_neighbors(grid, row, col):
     return count
 
 
-def get_cell_color(row):
+def get_cell_color(row, zombie=False):
     """Get the color for a cell based on the row number."""
     top_color = (60, 173, 100)  # Color for top of the wave
     bottom_color = (52, 152, 219)  # Color for bottom of the wave
     alpha = min(255, max(0, int(255 * (row / ROWS))))  # Opacity based on the row number
+    if zombie:
+        top_color = (255, 0, 0)
+        bottom_color = (255, 255, 0)
     color = (
         int((top_color[0] * alpha + bottom_color[0] * (255 - alpha)) / 255),
         int((top_color[1] * alpha + bottom_color[1] * (255 - alpha)) / 255),
@@ -56,8 +106,7 @@ def get_cell_color(row):
     return color
 
 
-def update_grid(grid):
-    """Update the grid based on the rules of Conway's Game of Life."""
+def conway_rules(grid):
     new_grid = [[0 for _ in range(COLS)] for _ in range(ROWS)]
     for row in range(ROWS):
         for col in range(COLS):
@@ -72,15 +121,30 @@ def update_grid(grid):
         randomly_flip_cells(new_grid)
     return new_grid
 
+
+def update_grid(grid):
+    """Update the grid based on the rules of Conway's Game of Life."""
+    if ZOMBIE:
+        return zombie(grid)
+    else:
+        return conway_rules(grid)
+
+
 def darker(color, depth=0.2):
     """Return a darker version of the given color."""
     r, g, b = color
     return int(r * (1 - depth)), int(g * (1 - depth)), int(b * (1 - depth))
 
+
 def lighter(color, depth=0.2):
     """Return a lighter version of the given color."""
     r, g, b = color
-    return int(r + (240 - r) * depth//2), int(g + (240 - g) * depth//2), int(b + (240 - b) * depth//2)
+    return (
+        int(r + (240 - r) * depth // 2),
+        int(g + (240 - g) * depth // 2),
+        int(b + (240 - b) * depth // 2),
+    )
+
 
 def draw_grid():
     for x in range(0, WIDTH, CELL_SIZE):
@@ -100,8 +164,11 @@ def draw_color_scheme(grid, scale_factor, last_grid):
     for row in range(ROWS):
         for col in range(COLS):
             if grid[row][col] != last_grid[row][col]:
-                if grid[row][col] == 1:
-                    color = get_cell_color(row)
+                if grid[row][col] >= 1:
+                    if grid[row][col] == 2:
+                        color = get_cell_color(row, True)
+                    if grid[row][col] == 1:
+                        color = get_cell_color(row)
                     size = int(CELL_SIZE + CELL_SIZE * scale_factor)
                     x = col * CELL_SIZE + CELL_SIZE // 2
                     y = row * CELL_SIZE + CELL_SIZE // 2
@@ -113,14 +180,18 @@ def draw_color_scheme(grid, scale_factor, last_grid):
                     highlight_size = size // 4
                     highlight_color = lighter(color, 0.2)
                     highlight_pos = (x - highlight_size, y - highlight_size)
-                    highlight_rect = pygame.Rect(highlight_pos, (highlight_size*2, highlight_size*2))
+                    highlight_rect = pygame.Rect(
+                        highlight_pos, (highlight_size * 2, highlight_size * 2)
+                    )
                     pygame.draw.ellipse(screen, highlight_color, highlight_rect)
 
                     # Draw the circle shadow
                     shadow_size = size // 4
                     shadow_color = darker(color, 0.2)
                     shadow_pos = (x + shadow_size, y + shadow_size)
-                    shadow_rect = pygame.Rect(shadow_pos, (size - shadow_size*4, size - shadow_size*4))
+                    shadow_rect = pygame.Rect(
+                        shadow_pos, (size - shadow_size * 4, size - shadow_size * 4)
+                    )
                     pygame.draw.ellipse(screen, shadow_color, shadow_rect)
 
                     # Draw the specular highlight
@@ -129,7 +200,7 @@ def draw_color_scheme(grid, scale_factor, last_grid):
                     pygame.draw.circle(
                         screen,
                         specular_color,
-                        (x - specular_size, y  + specular_size),
+                        (x - specular_size, y + specular_size),
                         specular_size,
                     )
                 else:
@@ -144,12 +215,14 @@ def draw_color_scheme(grid, scale_factor, last_grid):
         draw_grid()
     pygame.display.update()
 
+
 def interpolate_colors(color1, color2, t):
     """Interpolate between two colors."""
     r = int(color1[0] + (color2[0] - color1[0]) * t)
     g = int(color1[1] + (color2[1] - color1[1]) * t)
     b = int(color1[2] + (color2[2] - color1[2]) * t)
     return (r, g, b)
+
 
 def create_glider(grid, row, col):
     """Create a glider pattern at the specified row and column."""
@@ -159,15 +232,52 @@ def create_glider(grid, row, col):
             grid[row + i][col + j] = glider[i][j]
     return grid
 
+
 def randomly_flip_cells(grid):
     """Randomly flip the states of a few cells on the grid."""
-    if FLIP <=1:
+    if FLIP <= 1:
         return
     num_flips = random.randint(1, FLIP)
     for i in range(num_flips):
         row = random.randint(0, ROWS - 1)
         col = random.randint(0, COLS - 1)
         grid[row][col] = 1 - grid[row][col]
+
+
+def check_if_neighbor(grid, row, col, cell_type=1):
+    return any(
+        grid[(row + i) % ROWS][(col + j) % COLS] == cell_type
+        for i in range(-1, 2)
+        for j in range(-1, 2)
+    )
+
+
+def zombie(grid):
+    """Apply the zombie infection rule to the given grid."""
+    new_grid = [[0 for _ in range(COLS)] for _ in range(ROWS)]
+    for row in range(ROWS):
+        for col in range(COLS):
+            neighbors = count_neighbors(grid, row, col)
+            if grid[row][col] == 0:
+                if neighbors >= 3 and check_if_neighbor(grid, row, col, 2):
+                    if random.random() < INFECT_PROBABILITY:
+                        new_grid[row][col] = 2  # Cell turns into a zombie
+                elif neighbors == 3 and not check_if_neighbor(grid, row, col, 2):
+                    new_grid[row][col] = 1
+                else:
+                    new_grid[row][col] = 0  # Cell stays dead
+            elif grid[row][col] == 1:
+                if neighbors < 1 or neighbors > 3:
+                    new_grid[row][col] = 0  # Live cell dies
+                else:
+                    new_grid[row][col] = 1  # Live cell stays alive
+            elif grid[row][col] == 2:
+                if neighbors == 3 and not check_if_neighbor(grid, row, col, 2):
+                    new_grid[row][col] = 0
+                else:
+                    new_grid[row][col] = 2
+    return new_grid
+
 
 def main():
     """Run the game."""
@@ -218,6 +328,8 @@ def main():
                     row = y // CELL_SIZE
                     col = x // CELL_SIZE
                     grid[row][col] = 1
+                    if ZOMBIE:
+                        grid[row][col] = 2
         scaled_width = int(WIDTH * zoom_factor)
         scaled_height = int(HEIGHT * zoom_factor)
         scaled_screen = pygame.transform.scale(screen, (scaled_width, scaled_height))
@@ -236,6 +348,7 @@ def main():
         clock.tick(FPS)
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()
