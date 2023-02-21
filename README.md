@@ -92,7 +92,7 @@ The game can be customized by modifying the following parameters in the config.p
 
 ## Code Documentation
 
-[Documentation](https://jainsid24.github.io/game-of-life/)
+[Documentation](https://jainsid24.github.io/life-odyssey/)
 
 ## References
 
